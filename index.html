@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Contest Canoro</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f4f7;
+            color: #222;
+        }
+
+        .contenitore {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .intestazione {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .intestazione h1 {
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+
+        .intestazione p {
+            margin: 0;
+            color: #666;
+        }
+
+        .concorrente {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 18px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        .concorrente h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 18px;
+        }
+
+        .voti {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .voto {
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 10px;
+            padding: 12px 4px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .voto:hover {
+            background: #eee;
+        }
+
+        .voto.selezionato {
+            background: #222;
+            color: white;
+            border-color: #222;
+        }
+
+        .invia {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            background: #222;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .invia:disabled {
+            background: #bbb;
+            cursor: not-allowed;
+        }
+
+        .messaggio {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="contenitore">
+
+    <div class="intestazione">
+        <h1>🎤 Contest Canoro</h1>
+        <p>Vota tutti i concorrenti</p>
+    </div>
+
+    <!-- CONCORRENTE 1 -->
+    <div class="concorrente">
+        <h2>Concorrente 1</h2>
+
+        <div class="voti">
+            <button class="voto">1</button>
+            <button class="voto">1,5</button>
+            <button class="voto">2</button>
+            <button class="voto">2,5</button>
+            <button class="voto">3</button>
+            <button class="voto">3,5</button>
+            <button class="voto">4</button>
+            <button class="voto">4,5</button>
+            <button class="voto">5</button>
+        </div>
+    </div>
+
+    <!-- CONCORRENTE 2 -->
+    <div class="concorrente">
+        <h2>Concorrente 2</h2>
+
+        <div class="voti">
+            <button class="voto">1</button>
+            <button class="voto">1,5</button>
+            <button class="voto">2</button>
+            <button class="voto">2,5</button>
+            <button class="voto">3</button>
+            <button class="voto">3,5</button>
+            <button class="voto">4</button>
+            <button class="voto">4,5</button>
+            <button class="voto">5</button>
+        </div>
+    </div>
+
+    <!-- CONCORRENTE 3 -->
+    <div class="concorrente">
+        <h2>Concorrente 3</h2>
+
+        <div class="voti">
+            <button class="voto">1</button>
+            <button class="voto">1,5</button>
+            <button class="voto">2</button>
+            <button class="voto">2,5</button>
+            <button class="voto">3</button>
+            <button class="voto">3,5</button>
+            <button class="voto">4</button>
+            <button class="voto">4,5</button>
+            <button class="voto">5</button>
+        </div>
+    </div>
+
+    <button class="invia" id="invia" disabled>
+        INVIA VOTAZIONE
+    </button>
+
+    <div class="messaggio" id="messaggio"></div>
+
+</div>
+
+<script>
+
+    const concorrenti = document.querySelectorAll(".concorrente");
+    const pulsanteInvia = document.getElementById("invia");
+    const messaggio = document.getElementById("messaggio");
+
+    concorrenti.forEach((concorrente) => {
+
+        const pulsanti = concorrente.querySelectorAll(".voto");
+
+        pulsanti.forEach((pulsante) => {
+
+            pulsante.addEventListener("click", () => {
+
+                pulsanti.forEach((p) => {
+                    p.classList.remove("selezionato");
+                });
+
+                pulsante.classList.add("selezionato");
+
+                controllaVotazione();
+            });
+
+        });
+
+    });
+
+    function controllaVotazione() {
+
+        let completati = 0;
+
+        concorrenti.forEach((concorrente) => {
+
+            const selezionato =
+                concorrente.querySelector(".voto.selezionato");
+
+            if (selezionato) {
+                completati++;
+            }
+
+        });
+
+        pulsanteInvia.disabled = completati !== 3;
+    }
+
+    pulsanteInvia.addEventListener("click", () => {
+
+        messaggio.textContent =
+            "✅ Votazione compilata correttamente!";
+
+    });
+
+</script>
+
+</body>
+</html>
