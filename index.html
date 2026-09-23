@@ -110,57 +110,57 @@
 
     <div class="intestazione">
         <h1>🎤 Contest Canoro</h1>
-        <p>Vota tutti i concorrenti</p>
+        <p>Assegna un voto da 1 a 5 a ciascun concorrente</p>
     </div>
 
     <!-- CONCORRENTE 1 -->
-    <div class="concorrente">
+    <div class="concorrente" data-id="concorrente1">
         <h2>Concorrente 1</h2>
 
         <div class="voti">
-            <button class="voto">1</button>
-            <button class="voto">1,5</button>
-            <button class="voto">2</button>
-            <button class="voto">2,5</button>
-            <button class="voto">3</button>
-            <button class="voto">3,5</button>
-            <button class="voto">4</button>
-            <button class="voto">4,5</button>
-            <button class="voto">5</button>
+            <button class="voto" data-voto="1">1</button>
+            <button class="voto" data-voto="1.5">1,5</button>
+            <button class="voto" data-voto="2">2</button>
+            <button class="voto" data-voto="2.5">2,5</button>
+            <button class="voto" data-voto="3">3</button>
+            <button class="voto" data-voto="3.5">3,5</button>
+            <button class="voto" data-voto="4">4</button>
+            <button class="voto" data-voto="4.5">4,5</button>
+            <button class="voto" data-voto="5">5</button>
         </div>
     </div>
 
     <!-- CONCORRENTE 2 -->
-    <div class="concorrente">
+    <div class="concorrente" data-id="concorrente2">
         <h2>Concorrente 2</h2>
 
         <div class="voti">
-            <button class="voto">1</button>
-            <button class="voto">1,5</button>
-            <button class="voto">2</button>
-            <button class="voto">2,5</button>
-            <button class="voto">3</button>
-            <button class="voto">3,5</button>
-            <button class="voto">4</button>
-            <button class="voto">4,5</button>
-            <button class="voto">5</button>
+            <button class="voto" data-voto="1">1</button>
+            <button class="voto" data-voto="1.5">1,5</button>
+            <button class="voto" data-voto="2">2</button>
+            <button class="voto" data-voto="2.5">2,5</button>
+            <button class="voto" data-voto="3">3</button>
+            <button class="voto" data-voto="3.5">3,5</button>
+            <button class="voto" data-voto="4">4</button>
+            <button class="voto" data-voto="4.5">4,5</button>
+            <button class="voto" data-voto="5">5</button>
         </div>
     </div>
 
     <!-- CONCORRENTE 3 -->
-    <div class="concorrente">
+    <div class="concorrente" data-id="concorrente3">
         <h2>Concorrente 3</h2>
 
         <div class="voti">
-            <button class="voto">1</button>
-            <button class="voto">1,5</button>
-            <button class="voto">2</button>
-            <button class="voto">2,5</button>
-            <button class="voto">3</button>
-            <button class="voto">3,5</button>
-            <button class="voto">4</button>
-            <button class="voto">4,5</button>
-            <button class="voto">5</button>
+            <button class="voto" data-voto="1">1</button>
+            <button class="voto" data-voto="1.5">1,5</button>
+            <button class="voto" data-voto="2">2</button>
+            <button class="voto" data-voto="2.5">2,5</button>
+            <button class="voto" data-voto="3">3</button>
+            <button class="voto" data-voto="3.5">3,5</button>
+            <button class="voto" data-voto="4">4</button>
+            <button class="voto" data-voto="4.5">4,5</button>
+            <button class="voto" data-voto="5">5</button>
         </div>
     </div>
 
@@ -172,11 +172,47 @@
 
 </div>
 
-<script>
+
+<!-- FIREBASE -->
+<script type="module">
+
+    import { initializeApp }
+        from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+
+    import {
+        getDatabase,
+        ref,
+        runTransaction
+    }
+        from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
+
+
+    // CONFIGURAZIONE FIREBASE
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBTa5CNVCbVVmFv7auY4EpLiDhS6-M5t-s",
+        authDomain: "freeda-voice.firebaseapp.com",
+        databaseURL: "https://freeda-voice-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "freeda-voice",
+        storageBucket: "freeda-voice.firebasestorage.app",
+        messagingSenderId: "414855280264",
+        appId: "1:414855280264:web:bb506f3f9d7fa3f93ad13d"
+    };
+
+
+    // AVVIA FIREBASE
+
+    const app = initializeApp(firebaseConfig);
+
+    const database = getDatabase(app);
+
+
+    // GESTIONE DEI VOTI
 
     const concorrenti = document.querySelectorAll(".concorrente");
     const pulsanteInvia = document.getElementById("invia");
     const messaggio = document.getElementById("messaggio");
+
 
     concorrenti.forEach((concorrente) => {
 
@@ -199,6 +235,9 @@
 
     });
 
+
+    // CONTROLLA CHE TUTTI E 3 ABBIANO UN VOTO
+
     function controllaVotazione() {
 
         let completati = 0;
@@ -217,10 +256,61 @@
         pulsanteInvia.disabled = completati !== 3;
     }
 
-    pulsanteInvia.addEventListener("click", () => {
 
-        messaggio.textContent =
-            "✅ Votazione compilata correttamente!";
+    // INVIO DELLA SCHEDA
+
+    pulsanteInvia.addEventListener("click", async () => {
+
+        pulsanteInvia.disabled = true;
+
+        messaggio.textContent = "⏳ Invio dei voti...";
+
+
+        try {
+
+            for (const concorrente of concorrenti) {
+
+                const id = concorrente.dataset.id;
+
+                const selezionato =
+                    concorrente.querySelector(".voto.selezionato");
+
+                const voto =
+                    Number(selezionato.dataset.voto);
+
+
+                const riferimento =
+                    ref(database, "serata/concorrenti/" + id + "/totale");
+
+
+                await runTransaction(
+                    riferimento,
+                    (totaleAttuale) => {
+
+                        if (totaleAttuale === null) {
+                            return voto;
+                        }
+
+                        return Number(totaleAttuale) + voto;
+                    }
+                );
+
+            }
+
+
+            messaggio.textContent =
+                "✅ Votazione registrata! Grazie.";
+
+
+        } catch (errore) {
+
+            console.error(errore);
+
+            messaggio.textContent =
+                "❌ Errore durante l'invio dei voti.";
+
+            pulsanteInvia.disabled = false;
+        }
 
     });
 
