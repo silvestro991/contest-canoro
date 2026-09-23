@@ -26,7 +26,7 @@
 
         .intestazione {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         .intestazione h1 {
@@ -37,6 +37,29 @@
         .intestazione p {
             margin: 0;
             color: #666;
+        }
+
+        .manche {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .manche button {
+            flex: 1;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .manche button.attiva {
+            background: #222;
+            color: white;
+            border-color: #222;
         }
 
         .concorrente {
@@ -55,7 +78,7 @@
 
         .voti {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
         }
 
@@ -64,7 +87,7 @@
             background: white;
             border-radius: 10px;
             padding: 12px 4px;
-            font-size: 15px;
+            font-size: 16px;
             cursor: pointer;
         }
 
@@ -100,6 +123,14 @@
             text-align: center;
             margin-top: 20px;
             font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .info {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 18px;
         }
     </style>
 </head>
@@ -110,14 +141,28 @@
 
     <div class="intestazione">
         <h1>🎤 Contest Canoro</h1>
-        <p>Assegna un voto da 1 a 5 a ciascun concorrente</p>
+        <p id="sottotitolo">Votazione</p>
     </div>
+
+    <!-- SELEZIONE MANCHE -->
+    <div class="manche">
+        <button id="manche1" class="attiva">
+            Manche 1
+        </button>
+
+        <button id="manche2">
+            Manche 2
+        </button>
+    </div>
+
 
     <!-- CONCORRENTE 1 -->
     <div class="concorrente" data-id="concorrente1">
-        <h2>Concorrente 1</h2>
+
+        <h2 id="nome1">Concorrente 1</h2>
 
         <div class="voti">
+
             <button class="voto" data-voto="1">1</button>
             <button class="voto" data-voto="1.5">1,5</button>
             <button class="voto" data-voto="2">2</button>
@@ -127,14 +172,18 @@
             <button class="voto" data-voto="4">4</button>
             <button class="voto" data-voto="4.5">4,5</button>
             <button class="voto" data-voto="5">5</button>
+
         </div>
     </div>
+
 
     <!-- CONCORRENTE 2 -->
     <div class="concorrente" data-id="concorrente2">
-        <h2>Concorrente 2</h2>
+
+        <h2 id="nome2">Concorrente 2</h2>
 
         <div class="voti">
+
             <button class="voto" data-voto="1">1</button>
             <button class="voto" data-voto="1.5">1,5</button>
             <button class="voto" data-voto="2">2</button>
@@ -144,14 +193,18 @@
             <button class="voto" data-voto="4">4</button>
             <button class="voto" data-voto="4.5">4,5</button>
             <button class="voto" data-voto="5">5</button>
+
         </div>
     </div>
+
 
     <!-- CONCORRENTE 3 -->
     <div class="concorrente" data-id="concorrente3">
-        <h2>Concorrente 3</h2>
+
+        <h2 id="nome3">Concorrente 3</h2>
 
         <div class="voti">
+
             <button class="voto" data-voto="1">1</button>
             <button class="voto" data-voto="1.5">1,5</button>
             <button class="voto" data-voto="2">2</button>
@@ -161,14 +214,20 @@
             <button class="voto" data-voto="4">4</button>
             <button class="voto" data-voto="4.5">4,5</button>
             <button class="voto" data-voto="5">5</button>
+
         </div>
     </div>
+
 
     <button class="invia" id="invia" disabled>
         INVIA VOTAZIONE
     </button>
 
     <div class="messaggio" id="messaggio"></div>
+
+    <div class="info">
+        Puoi votare una sola volta per ogni manche.
+    </div>
 
 </div>
 
@@ -182,35 +241,74 @@
     import {
         getDatabase,
         ref,
-        runTransaction
+        runTransaction,
+        get,
+        update
     }
         from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
     import {
-
-  getAuth,
-
-  signInAnonymously
-
-}
-
-from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+        getAuth,
+        signInAnonymously
+    }
+        from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
 
-    // CONFIGURAZIONE FIREBASE
+    // =====================================================
+    // CONFIGURAZIONE DELLA SERATA
+    // =====================================================
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyBTa5CNVCbVVmFv7auY4EpLiDhS6-M5t-s",
-        authDomain: "freeda-voice.firebaseapp.com",
-        databaseURL: "https://freeda-voice-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "freeda-voice",
-        storageBucket: "freeda-voice.firebasestorage.app",
-        messagingSenderId: "414855280264",
-        appId: "1:414855280264:web:bb506f3f9d7fa3f93ad13d"
+    const SESSIONE = "serata_001";
+
+    /*
+       Per cambiare manche:
+
+       "manche1" = prima manche
+       "manche2" = seconda manche
+    */
+
+    let MANCHE_ATTIVA = "manche1";
+
+
+    // NOMI DEI CONCORRENTI
+    // Per ora li cambiamo qui.
+    // In seguito creeremo la pagina amministratore.
+
+    const NOMI = {
+        concorrente1: "Concorrente 1",
+        concorrente2: "Concorrente 2",
+        concorrente3: "Concorrente 3"
     };
 
 
-    // AVVIA FIREBASE
+    // =====================================================
+    // CONFIGURAZIONE FIREBASE
+    // =====================================================
+
+    const firebaseConfig = {
+
+        apiKey: "AIzaSyBTa5CNVCbVVmFv7auY4EpLiDhS6-M5t-s",
+
+        authDomain: "freeda-voice.firebaseapp.com",
+
+        databaseURL:
+            "https://freeda-voice-default-rtdb.europe-west1.firebasedatabase.app",
+
+        projectId: "freeda-voice",
+
+        storageBucket:
+            "freeda-voice.firebasestorage.app",
+
+        messagingSenderId: "414855280264",
+
+        appId:
+            "1:414855280264:web:bb506f3f9d7fa3f93ad13d"
+    };
+
+
+    // =====================================================
+    // AVVIO FIREBASE
+    // =====================================================
 
     const app = initializeApp(firebaseConfig);
 
@@ -218,32 +316,143 @@ from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
     const auth = getAuth(app);
 
-await signInAnonymously(auth);
-    
+
+    // =====================================================
+    // AUTENTICAZIONE ANONIMA
+    // =====================================================
+
+    await signInAnonymously(auth);
 
 
-    // GESTIONE DEI VOTI
+    const utente = auth.currentUser;
 
-    const concorrenti = document.querySelectorAll(".concorrente");
-    const pulsanteInvia = document.getElementById("invia");
-    const messaggio = document.getElementById("messaggio");
+    if (!utente) {
 
+        throw new Error(
+            "Impossibile identificare il votante."
+        );
+    }
+
+
+    const ID_UTENTE = utente.uid;
+
+
+    // =====================================================
+    // ELEMENTI PAGINA
+    // =====================================================
+
+    const concorrenti =
+        document.querySelectorAll(".concorrente");
+
+    const pulsanteInvia =
+        document.getElementById("invia");
+
+    const messaggio =
+        document.getElementById("messaggio");
+
+    const pulsanteManche1 =
+        document.getElementById("manche1");
+
+    const pulsanteManche2 =
+        document.getElementById("manche2");
+
+
+    // Inserimento nomi
+
+    document.getElementById("nome1").textContent =
+        NOMI.concorrente1;
+
+    document.getElementById("nome2").textContent =
+        NOMI.concorrente2;
+
+    document.getElementById("nome3").textContent =
+        NOMI.concorrente3;
+
+
+    // =====================================================
+    // CAMBIO MANCHE
+    // =====================================================
+
+    pulsanteManche1.addEventListener("click", async () => {
+
+        await cambiaManche("manche1");
+
+    });
+
+
+    pulsanteManche2.addEventListener("click", async () => {
+
+        await cambiaManche("manche2");
+
+    });
+
+
+    async function cambiaManche(manche) {
+
+        MANCHE_ATTIVA = manche;
+
+        pulsanteManche1.classList.remove("attiva");
+        pulsanteManche2.classList.remove("attiva");
+
+        if (manche === "manche1") {
+
+            pulsanteManche1.classList.add("attiva");
+
+        } else {
+
+            pulsanteManche2.classList.add("attiva");
+
+        }
+
+
+        // Cancella eventuali selezioni precedenti
+
+        concorrenti.forEach((concorrente) => {
+
+            concorrente
+                .querySelectorAll(".voto")
+                .forEach((pulsante) => {
+
+                    pulsante.classList.remove("selezionato");
+
+                });
+
+        });
+
+
+        pulsanteInvia.disabled = false;
+
+        await controllaSeHaGiaVotato();
+
+    }
+
+
+    // =====================================================
+    // SELEZIONE DEI VOTI
+    // =====================================================
 
     concorrenti.forEach((concorrente) => {
 
-        const pulsanti = concorrente.querySelectorAll(".voto");
+        const pulsanti =
+            concorrente.querySelectorAll(".voto");
+
 
         pulsanti.forEach((pulsante) => {
 
             pulsante.addEventListener("click", () => {
 
                 pulsanti.forEach((p) => {
+
                     p.classList.remove("selezionato");
+
                 });
+
 
                 pulsante.classList.add("selezionato");
 
+
                 controllaVotazione();
+
             });
 
         });
@@ -251,83 +460,289 @@ await signInAnonymously(auth);
     });
 
 
-    // CONTROLLA CHE TUTTI E 3 ABBIANO UN VOTO
+    // =====================================================
+    // CONTROLLA CHE TUTTI ABBIANO UN VOTO
+    // =====================================================
 
     function controllaVotazione() {
 
         let completati = 0;
 
+
         concorrenti.forEach((concorrente) => {
 
             const selezionato =
-                concorrente.querySelector(".voto.selezionato");
+                concorrente.querySelector(
+                    ".voto.selezionato"
+                );
+
 
             if (selezionato) {
+
                 completati++;
+
             }
 
         });
 
-        pulsanteInvia.disabled = completati !== 3;
+
+        pulsanteInvia.disabled =
+            completati !== 3;
+
     }
 
 
-    // INVIO DELLA SCHEDA
+    // =====================================================
+    // CONTROLLA SE L'UTENTE HA GIÀ VOTATO
+    // =====================================================
 
-    pulsanteInvia.addEventListener("click", async () => {
+    async function controllaSeHaGiaVotato() {
 
-        pulsanteInvia.disabled = true;
-
-        messaggio.textContent = "⏳ Invio dei voti...";
-
-
-        try {
-
-            for (const concorrente of concorrenti) {
-
-                const id = concorrente.dataset.id;
-
-                const selezionato =
-                    concorrente.querySelector(".voto.selezionato");
-
-                const voto =
-                    Number(selezionato.dataset.voto);
+        const riferimento =
+            ref(
+                database,
+                "serate/" +
+                SESSIONE +
+                "/" +
+                MANCHE_ATTIVA +
+                "/votanti/" +
+                ID_UTENTE
+            );
 
 
-               const riferimento =
-    ref(database, "serata/manche1/concorrenti/" + id + "/totale");
+        const risultato =
+            await get(riferimento);
 
 
-                await runTransaction(
-                    riferimento,
-                    (totaleAttuale) => {
+        if (risultato.exists()) {
 
-                        if (totaleAttuale === null) {
-                            return voto;
+            pulsanteInvia.disabled = true;
+
+            messaggio.textContent =
+                "⚠️ Hai già votato questa manche.";
+
+        } else {
+
+            messaggio.textContent =
+                "";
+
+            controllaVotazione();
+
+        }
+
+    }
+
+
+    // Controlliamo subito la manche iniziale
+
+    await controllaSeHaGiaVotato();
+
+
+    // =====================================================
+    // INVIO DELLA VOTAZIONE
+    // =====================================================
+
+    pulsanteInvia.addEventListener(
+        "click",
+        async () => {
+
+            pulsanteInvia.disabled = true;
+
+            messaggio.textContent =
+                "⏳ Invio dei voti...";
+
+
+            try {
+
+                // -----------------------------------------
+                // Recuperiamo i tre voti
+                // -----------------------------------------
+
+                const voti = {};
+
+
+                for (const concorrente of concorrenti) {
+
+                    const id =
+                        concorrente.dataset.id;
+
+
+                    const selezionato =
+                        concorrente.querySelector(
+                            ".voto.selezionato"
+                        );
+
+
+                    if (!selezionato) {
+
+                        throw new Error(
+                            "Manca un voto."
+                        );
+
+                    }
+
+
+                    voti[id] =
+                        Number(
+                            selezionato.dataset.voto
+                        );
+
+                }
+
+
+                // -----------------------------------------
+                // Controlliamo ancora una volta
+                // che non abbia già votato
+                // -----------------------------------------
+
+                const riferimentoVotante =
+                    ref(
+                        database,
+                        "serate/" +
+                        SESSIONE +
+                        "/" +
+                        MANCHE_ATTIVA +
+                        "/votanti/" +
+                        ID_UTENTE
+                    );
+
+
+                const controllo =
+                    await get(
+                        riferimentoVotante
+                    );
+
+
+                if (controllo.exists()) {
+
+                    messaggio.textContent =
+                        "⚠️ Hai già votato questa manche.";
+
+                    return;
+
+                }
+
+
+                // -----------------------------------------
+                // Aggiornamento dei tre totali
+                // -----------------------------------------
+
+                const aggiornamenti = {};
+
+
+                for (const id in voti) {
+
+                    const voto =
+                        voti[id];
+
+
+                    const riferimentoTotale =
+                        ref(
+                            database,
+                            "serate/" +
+                            SESSIONE +
+                            "/" +
+                            MANCHE_ATTIVA +
+                            "/concorrenti/" +
+                            id +
+                            "/totale"
+                        );
+
+
+                    const risultato =
+                        await runTransaction(
+                            riferimentoTotale,
+                            (totaleAttuale) => {
+
+                                if (
+                                    totaleAttuale === null
+                                ) {
+
+                                    return voto;
+
+                                }
+
+
+                                return (
+                                    Number(
+                                        totaleAttuale
+                                    ) + voto
+                                );
+
+                            }
+                        );
+
+
+                    if (!risultato.committed) {
+
+                        throw new Error(
+                            "Errore nel salvataggio del totale."
+                        );
+
+                    }
+
+                }
+
+
+                // -----------------------------------------
+                // Registriamo che questo utente ha votato
+                // -----------------------------------------
+
+                await update(
+
+                    riferimentoVotante.parent.parent,
+
+                    {
+                        ["votanti/" + ID_UTENTE]: {
+                            votato: true,
+                            timestamp: Date.now()
                         }
+                    }
 
-                        return Number(totaleAttuale) + voto;
+                );
+
+
+                // -----------------------------------------
+                // Successo
+                // -----------------------------------------
+
+                messaggio.textContent =
+                    "✅ Votazione registrata! Grazie.";
+
+
+                concorrenti.forEach(
+                    (concorrente) => {
+
+                        concorrente
+                            .querySelectorAll(".voto")
+                            .forEach(
+                                (pulsante) => {
+
+                                    pulsante.disabled = true;
+
+                                }
+                            );
+
                     }
                 );
 
+
+            } catch (errore) {
+
+                console.error(errore);
+
+
+                messaggio.textContent =
+                    "❌ Errore durante l'invio dei voti.";
+
+
+                pulsanteInvia.disabled =
+                    false;
+
             }
 
-
-            messaggio.textContent =
-                "✅ Votazione registrata! Grazie.";
-
-
-        } catch (errore) {
-
-            console.error(errore);
-
-            messaggio.textContent =
-                "❌ Errore durante l'invio dei voti.";
-
-            pulsanteInvia.disabled = false;
         }
-
-    });
+    );
 
 </script>
 
