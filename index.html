@@ -543,207 +543,140 @@
     // =====================================================
 
     pulsanteInvia.addEventListener(
-        "click",
-        async () => {
+    "click",
+    async () => {
 
-            pulsanteInvia.disabled = true;
+        pulsanteInvia.disabled = true;
+        messaggio.textContent = "⏳ Invio dei voti...";
 
-            messaggio.textContent =
-                "⏳ Invio dei voti...";
+        try {
 
+            const voti = {};
 
-            try {
+            // Recupera i tre voti
+            for (const concorrente of concorrenti) {
 
-                // -----------------------------------------
-                // Recuperiamo i tre voti
-                // -----------------------------------------
+                const id = concorrente.dataset.id;
 
-                const voti = {};
+                const selezionato =
+                    concorrente.querySelector(".voto.selezionato");
 
-
-                for (const concorrente of concorrenti) {
-
-                    const id =
-                        concorrente.dataset.id;
-
-
-                    const selezionato =
-                        concorrente.querySelector(
-                            ".voto.selezionato"
-                        );
-
-
-                    if (!selezionato) {
-
-                        throw new Error(
-                            "Manca un voto."
-                        );
-
-                    }
-
-
-                    voti[id] =
-                        Number(
-                            selezionato.dataset.voto
-                        );
-
+                if (!selezionato) {
+                    throw new Error("Manca un voto.");
                 }
 
+                voti[id] = Number(selezionato.dataset.voto);
+            }
 
-                // -----------------------------------------
-                // Controlliamo ancora una volta
-                // che non abbia già votato
-                // -----------------------------------------
 
-                const riferimentoVotante =
+            // Percorso della manche corrente
+            const basePath =
+                "serate/" +
+                SESSIONE +
+                "/" +
+                MANCHE_ATTIVA;
+
+
+            // Percorso del votante
+            const votantePath =
+                basePath +
+                "/votanti/" +
+                ID_UTENTE;
+
+
+            // Controllo definitivo prima dell'invio
+            const riferimentoVotante =
+                ref(database, votantePath);
+
+            const controllo =
+                await get(riferimentoVotante);
+
+
+            if (controllo.exists()) {
+
+                messaggio.textContent =
+                    "⚠️ Hai già votato questa manche.";
+
+                return;
+            }
+
+
+            // Aggiorniamo i tre totali
+            for (const id in voti) {
+
+                const riferimentoTotale =
                     ref(
                         database,
-                        "serate/" +
-                        SESSIONE +
-                        "/" +
-                        MANCHE_ATTIVA +
-                        "/votanti/" +
-                        ID_UTENTE
+                        basePath +
+                        "/concorrenti/" +
+                        id +
+                        "/totale"
                     );
 
 
-                const controllo =
-                    await get(
-                        riferimentoVotante
-                    );
+                await runTransaction(
+                    riferimentoTotale,
+                    (totaleAttuale) => {
 
-
-                if (controllo.exists()) {
-
-                    messaggio.textContent =
-                        "⚠️ Hai già votato questa manche.";
-
-                    return;
-
-                }
-
-
-                // -----------------------------------------
-                // Aggiornamento dei tre totali
-                // -----------------------------------------
-
-                const aggiornamenti = {};
-
-
-                for (const id in voti) {
-
-                    const voto =
-                        voti[id];
-
-
-                    const riferimentoTotale =
-                        ref(
-                            database,
-                            "serate/" +
-                            SESSIONE +
-                            "/" +
-                            MANCHE_ATTIVA +
-                            "/concorrenti/" +
-                            id +
-                            "/totale"
-                        );
-
-
-                    const risultato =
-                        await runTransaction(
-                            riferimentoTotale,
-                            (totaleAttuale) => {
-
-                                if (
-                                    totaleAttuale === null
-                                ) {
-
-                                    return voto;
-
-                                }
-
-
-                                return (
-                                    Number(
-                                        totaleAttuale
-                                    ) + voto
-                                );
-
-                            }
-                        );
-
-
-                    if (!risultato.committed) {
-
-                        throw new Error(
-                            "Errore nel salvataggio del totale."
-                        );
-
-                    }
-
-                }
-
-
-                // -----------------------------------------
-                // Registriamo che questo utente ha votato
-                // -----------------------------------------
-
-                await update(
-
-                    riferimentoVotante.parent.parent,
-
-                    {
-                        ["votanti/" + ID_UTENTE]: {
-                            votato: true,
-                            timestamp: Date.now()
+                        if (totaleAttuale === null) {
+                            return voti[id];
                         }
-                    }
 
-                );
-
-
-                // -----------------------------------------
-                // Successo
-                // -----------------------------------------
-
-                messaggio.textContent =
-                    "✅ Votazione registrata! Grazie.";
-
-
-                concorrenti.forEach(
-                    (concorrente) => {
-
-                        concorrente
-                            .querySelectorAll(".voto")
-                            .forEach(
-                                (pulsante) => {
-
-                                    pulsante.disabled = true;
-
-                                }
-                            );
+                        return (
+                            Number(totaleAttuale) +
+                            voti[id]
+                        );
 
                     }
                 );
-
-
-            } catch (errore) {
-
-                console.error(errore);
-
-
-                messaggio.textContent =
-                    "❌ Errore durante l'invio dei voti.";
-
-
-                pulsanteInvia.disabled =
-                    false;
 
             }
 
-        }
-    );
 
+            // Registriamo il votante
+            await update(
+                riferimentoVotante,
+                {
+                    votato: true,
+                    timestamp: Date.now()
+                }
+            );
+
+
+            // Messaggio di conferma
+            messaggio.textContent =
+                "✅ Votazione registrata! Grazie.";
+
+
+            // Disabilita tutti i voti
+            concorrenti.forEach(
+                (concorrente) => {
+
+                    concorrente
+                        .querySelectorAll(".voto")
+                        .forEach(
+                            (pulsante) => {
+                                pulsante.disabled = true;
+                            }
+                        );
+
+                }
+            );
+
+
+        } catch (errore) {
+
+            console.error(errore);
+
+            messaggio.textContent =
+                "❌ Errore durante l'invio dei voti.";
+
+            pulsanteInvia.disabled = false;
+
+        }
+
+    }
+);
 </script>
 
 </body>
