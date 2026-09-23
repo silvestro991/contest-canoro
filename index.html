@@ -186,6 +186,16 @@
     }
         from "https://www.gstatic.com/firebasejs/12.9.0/firebase-database.js";
 
+    import {
+
+  getAuth,
+
+  signInAnonymously
+
+}
+
+from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+
 
     // CONFIGURAZIONE FIREBASE
 
@@ -205,6 +215,11 @@
     const app = initializeApp(firebaseConfig);
 
     const database = getDatabase(app);
+
+    const auth = getAuth(app);
+
+await signInAnonymously(auth);
+    
 
 
     // GESTIONE DEI VOTI
